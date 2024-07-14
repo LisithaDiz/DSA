@@ -50,7 +50,4 @@ object KMP{
         kmp_search("ababcabcabababd", "ababd")
         
     }
-    
-
-
 }
