@@ -1,55 +1,53 @@
+import scala.collection.mutable.ListBuffer
+
 object RK {
-  val d = 256   
 
-  def search(pattern: String, text: String, q: Int): Unit = {
-    val m = pattern.length()
-    val n = text.length()
-    var p = 0    
-    var t = 0   
-    var h = 1
+  def rabinKarp(text: String, pattern: String): List[Int] = {
+    val base = 4  // Since we have 4 characters: 'a', 'b', 'c', 'r'
+    val modulus = 101  // A prime number to minimize hash collisions
 
-    // The value of h would be "pow(d, m-1)%q"
-    for (i <- 0 until m - 1) {
-      h = (h * d) % q
-    }
-
-    for (i <- 0 until m) {
-      p = (d * p + pattern(i)) % q
-      t = (d * t + text(i)) % q
-    }
-    
-    for (i <- 0 to n - m) {
-
-      if (p == t) {
-        var j = 0
-        while (j < m && text(i + j) == pattern(j)) {
-          j += 1
-        }
-        if (j < m && text(i + j) != pattern(j)) {
-        }
-        if (j == m) {
-          println(s"Pattern found, Hash match at index $i")
-        }
-      } else {
-        println(s"Pattern not found,Hash mismatch at text index $i")
+    def computeHash(s: String): Int = {
+      var hash = 0
+      for (char <- s) {
+        hash = (hash * base + (char - 'a')) % modulus
       }
+      hash
+    }
 
-   
-      if (i < n - m) {
-        t = (d * (t - text(i) * h) + text(i + m)) % q
+    val m = pattern.length
+    val n = text.length
+    val results = ListBuffer[Int]()
 
-        if (t < 0) {
-          t = (t + q)
+    val patternHash = computeHash(pattern)
+    var windowHash = computeHash(text.substring(0, m))
+
+    val highestBase = math.pow(base, m - 1).toInt % modulus
+
+    if (windowHash == patternHash && text.substring(0, m) == pattern) {
+      results += 0
+    }
+
+    for (i <- 1 to n - m) {
+      windowHash = (windowHash * base - (text(i - 1) - 'a') * highestBase + (text(i + m - 1) - 'a')) % modulus
+      if (windowHash < 0) {
+        windowHash += modulus
+      }
+      // Check if hashes match before comparing substrings
+      if (windowHash == patternHash) {
+        // Check substring only if hashes match
+        if (text.substring(i, i + m) == pattern) {
+          results += i
         }
       }
     }
+
+    results.toList
   }
 
   def main(args: Array[String]): Unit = {
-    val text = "ababcabcabababdababd"
-    val pattern = "ababd"
-    val q = 101 
-
-    search(pattern, text, q)
+    val text = "abracadabra"
+    val pattern = "abra"
+    val matches = rabinKarp(text, pattern)
+    println(s"Pattern found at positions: ${matches.mkString(", ")}")
   }
 }
